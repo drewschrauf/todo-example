@@ -21,7 +21,54 @@ Todos.Controller = Ember.Object.create({
 		items.addObject(Todos.Todo.create({title: 'This is another Ember item'}));
 	},
 
+	createTodo: function(title) {
+		this.get('todos').addObject(Todos.Todo.create({title: title}));
+	},
+
 	remainingCount: function() {
 		return this.get('todos').filterProperty('isDone', false).length;
-	}.property('todos.@each.isDone')
+	}.property('todos.@each.isDone'),
+
+	completedCount: function() {
+		return this.get('todos').filterProperty('isDone').length;
+	}.property('todos.@each.isDone'),
+
+	clearCompleted: function() {
+		var todos = this.get('todos');
+		todos.removeObjects(todos.filterProperty('isDone'));
+	},
+
+	markAllComplete: function() {
+		this.get('todos').setEach('isDone', true);
+	}
+});
+
+Todos.CreateTodoView = Ember.TextField.extend({
+	insertNewline: function() {
+		var value = this.get('value');
+		if (value) {
+			Todos.Controller.createTodo(value);
+			this.set('value', '');
+		}
+	}
+});
+
+Todos.MarkAllCompleteView = Ember.Checkbox.extend({
+	remainingCountBinding: 'Todos.Controller.remainingCount',
+	
+	disabled: function() {
+		return this.get('remainingCount') === 0;
+	}.property('remainingCount'),
+
+	deselect: function() {
+		if (this.get('remainingCount') !== 0) {
+			this.set('value', false);
+		}
+	}.observes('remainingCount'),
+
+	markAllComplete: function() {
+		if (this.get('value')) {
+			Todos.Controller.markAllComplete();
+		}
+	}.observes('value')
 });
